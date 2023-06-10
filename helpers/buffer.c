@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-struct buffer* buffer_create()
+struct buffer* buffer_create(void)
 {
     struct buffer* buf = calloc(sizeof(struct buffer), 1);
     buf->data = calloc(BUFFER_REALLOC_AMOUNT, 1);

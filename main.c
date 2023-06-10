@@ -2,7 +2,7 @@
 
 #include "compiler.h"
 
-int main()
+int main(void)
 {
     int response = compile_file("./test.c", "./test.o", 0);
 

@@ -13,7 +13,7 @@
 
 enum
 {
-    VECTOR_FLAG_PEEK_DECREMENT = 0b00000001
+    VECTOR_FLAG_PEEK_DECREMENT = 1
 };
 
 struct vector

@@ -14,7 +14,7 @@ struct buffer
     int msize;
 };
 
-struct buffer* buffer_create();
+struct buffer* buffer_create(void);
 
 char buffer_read(struct buffer* buffer);
 char buffer_peek(struct buffer* buffer);

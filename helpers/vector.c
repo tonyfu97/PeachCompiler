@@ -322,6 +322,7 @@ int vector_pop_value(struct vector* vector, void* val)
     }
 
     vector_set_peek_pointer(vector, old_pp);
+    return index; // TODO: not sure
 }
 
 int vector_pop_at_data_address(struct vector *vector, void *address)

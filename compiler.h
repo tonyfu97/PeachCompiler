@@ -13,6 +13,18 @@ struct pos
     const char* filename;
 };
 
+#define NUMERIC_CASE\
+    case '0':\
+    case '1':\
+    case '2':\
+    case '3':\
+    case '4':\
+    case '5':\
+    case '6':\
+    case '7':\
+    case '8':\
+    case '9'
+
 enum
 {
     LEX_SUCCESS,
@@ -35,6 +47,7 @@ struct token
 {
     int type;
     int flags;
+    struct pos pos;
 
     union
     {
@@ -101,11 +114,14 @@ struct compile_process
 };
 
 // cpprocess.c
-int compile_file(const char *filename, const char *out_filename, int flags);
 struct compile_process* compile_process_create(const char *filename, const char *out_filename, int flags);
 char compile_process_next_char(struct lex_process *lex_process);
 char compile_process_peek_char(struct lex_process *lex_process);
 void compile_process_push_char(struct lex_process *lex_process, char c);
+
+// compiler.c
+void compiler_error(struct compile_process *compiler, const char *message, ...);
+int compile_file(const char *filename, const char *out_filename, int flags);
 
 // lex_process.c
 struct lex_process *lex_process_create(struct compile_process* compiler, struct lex_process_functions *functions, void *private);
@@ -115,6 +131,11 @@ struct vector *lex_process_tokens(struct lex_process *process);
 
 // lexer.c
 int lex(struct lex_process *process);
-
+struct token *token_create(struct token *_token);
+const char *read_number_str();
+unsigned long long read_number();
+struct token *token_make_number_for_value(unsigned long number);
+struct token *token_make_number();
+struct token *read_next_token();
 
 #endif // PEACHCOMPILER_H
