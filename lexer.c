@@ -5,11 +5,11 @@
 #include "helpers/vector.h"
 #include "helpers/buffer.h"
 
-#define LEX_GETC_IF(buffer, c, exp) \
-    for (c=peekc(); exp; c=peekc()) \
-    { \
-        buffer_write(buffer, c); \
-        nextc(); \
+#define LEX_GETC_IF(buffer, c, exp)     \
+    for (c = peekc(); exp; c = peekc()) \
+    {                                   \
+        buffer_write(buffer, c);        \
+        nextc();                        \
     }
 
 static struct lex_process *lex_process;
@@ -77,8 +77,7 @@ unsigned long long read_number()
 
 struct token *token_make_number_for_value(unsigned long number)
 {
-    return token_create(&(struct token)
-    {
+    return token_create(&(struct token){
         .type = TOKEN_TYPE_NUMBER,
         .llnum = number,
     });
@@ -94,7 +93,7 @@ struct token *token_make_string(char start_delm, char end_delim)
     struct buffer *buffer = buffer_create();
     assert(nextc() == start_delm);
     char c = nextc();
-    for (; c != end_delim && c != EOF; c=nextc())
+    for (; c != end_delim && c != EOF; c = nextc())
     {
         if (c == '\\')
         {
@@ -103,11 +102,146 @@ struct token *token_make_string(char start_delm, char end_delim)
         buffer_write(buffer, c);
     }
     buffer_write(buffer, '\0');
-    return token_create(&(struct token)
-    {
+    return token_create(&(struct token){
         .type = TOKEN_TYPE_STRING,
         .sval = buffer_ptr(buffer),
     });
+}
+
+static bool op_treated_as_one(char op)
+{
+    return op == '(' || op == '[' || op == ',' || op == '.' || op == '*' || op == '?';
+}
+
+static bool is_single_operator(char op)
+{
+    return op == '+' || op == '-' || op == '=' || op == '<' || op == '>' || op == '!' || op == '&' || op == '|' || op == '^' || op == '~' || op == '*' || op == '/' || op == '%' || op == '(' || op == '[' || op == ',' || op == '.' || op == '?';
+}
+
+static bool op_is_valid(const char *op)
+{
+    return S_EQ(op, "+") ||
+           S_EQ(op, "-") ||
+           S_EQ(op, "=") ||
+           S_EQ(op, "<") ||
+           S_EQ(op, ">") ||
+           S_EQ(op, "!") ||
+           S_EQ(op, "&") ||
+           S_EQ(op, "|") ||
+           S_EQ(op, "^") ||
+           S_EQ(op, "~") ||
+           S_EQ(op, "*") ||
+           S_EQ(op, "/") ||
+           S_EQ(op, "%") ||
+           S_EQ(op, "(") ||
+           S_EQ(op, "[") ||
+           S_EQ(op, ",") ||
+           S_EQ(op, ".") ||
+           S_EQ(op, "?") ||
+           S_EQ(op, "++") ||
+           S_EQ(op, "--") ||
+           S_EQ(op, "+=") ||
+           S_EQ(op, "-=") ||
+           S_EQ(op, "*=") ||
+           S_EQ(op, "/=") ||
+           S_EQ(op, "%=") ||
+           S_EQ(op, "==") ||
+           S_EQ(op, "!=") ||
+           S_EQ(op, "<=") ||
+           S_EQ(op, ">=") ||
+           S_EQ(op, "&&") ||
+           S_EQ(op, "||") ||
+           S_EQ(op, "...") ||
+           S_EQ(op, "<<") ||
+           S_EQ(op, ">>");
+}
+
+void read_op_flush_back_keep_first(struct buffer *buffer)
+{
+    const char *data = buffer_ptr(buffer);
+    int len = buffer->len;
+    for (int i = len-1; i >= 1; i--)
+    {
+        if (data[i] == '\0')
+        {
+            continue;
+        }
+        pushc(data[i]);
+    }
+}
+
+const char *read_op()
+{
+    bool single_operator = true;
+    char op = nextc();
+    struct buffer *buffer = buffer_create();
+    buffer_write(buffer, op);
+
+    // If op can be a multi-character operator.
+    if (!op_treated_as_one(op))
+    {
+        op = peekc();
+        if (is_single_operator(op))
+        {
+            buffer_write(buffer, op);
+            nextc();
+            single_operator = false;
+        }
+    }
+
+    buffer_write(buffer, '\0');
+    char *ptr = buffer_ptr(buffer);
+    if (!single_operator)
+    {
+        if (!op_is_valid(ptr))
+        {
+            read_op_flush_back_keep_first(buffer);
+            ptr[1] = '\0';
+        }
+    }
+    else if (!op_is_valid(ptr))
+    {
+        compiler_error(lex_process->compiler, "Invalid operator '%s'", ptr);
+    }
+    return ptr;
+}
+
+static void lex_new_expression()
+{
+    lex_process->current_expression_count++;
+    if (lex_process->current_expression_count == 1)
+    {
+        lex_process->parentheses_buffer = buffer_create();
+    }
+}
+
+bool lex_is_in_expression()
+{
+    return lex_process->current_expression_count > 0;
+}
+
+static struct token *token_make_operator_or_string()
+{
+    char op = peekc();
+    if (op == '<')  // in case of #include <abc.h>
+    {
+        struct token *last_token = lexer_last_token();
+        if (token_is_keyword(last_token, "include"))
+        {
+            return token_make_string('<', '>');
+        }
+    }
+    
+    struct token *token = token_create(&(struct token){
+        .type = TOKEN_TYPE_OPERATOR,
+        .sval = read_op(),
+    });
+
+    if (op == '[')
+    {
+        lex_new_expression();
+    }
+    return token;
 }
 
 struct token *read_next_token()
@@ -115,25 +249,29 @@ struct token *read_next_token()
     struct token *token = NULL;
     char c = peekc();
 
-    switch(c)
+    switch (c)
     {
-        NUMERIC_CASE:
-            token = token_make_number();
-            break;
-        
-        case '"':
-            token = token_make_string('"', '"');
-            break;
+    NUMERIC_CASE:
+        token = token_make_number();
+        break;
 
-        case ' ':
-        case '\t':
-            token = handle_white_space();
-            break;
+    OPERATOR_CASE_EXCLUDE_DIVIDION:
+        token = token_make_operator_or_string();
+        break;
 
-        case EOF:
-            return NULL;
-        default:
-            compiler_error(lex_process->compiler, "Unexpected character '%c'", c);
+    case '"':
+        token = token_make_string('"', '"');
+        break;
+
+    case ' ':
+    case '\t':
+        token = handle_white_space();
+        break;
+
+    case EOF:
+        return NULL;
+    default:
+        compiler_error(lex_process->compiler, "Unexpected character '%c'", c);
     }
 
     return token;
@@ -148,7 +286,7 @@ int lex(struct lex_process *process)
     process->pos.filename = process->compiler->cfile.abs_path;
 
     struct token *token = read_next_token();
-    while(token)
+    while (token)
     {
         vector_push(process->tokens, token);
         token = read_next_token();

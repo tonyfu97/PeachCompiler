@@ -3,8 +3,12 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "helpers/vector.h"
+
+#define S_EQ(str, str2)\
+        (str && str2 && (strcmp(str, str2) == 0))
 
 struct pos
 {
@@ -24,6 +28,26 @@ struct pos
     case '7':\
     case '8':\
     case '9'
+
+#define OPERATOR_CASE_EXCLUDE_DIVIDION\
+    case '+':\
+    case '-':\
+    case '*':\
+    case '>':\
+    case '<':\
+    case '^':\
+    case '%':\
+    case '!':\
+    case '=':\
+    case '~':\
+    case '|':\
+    case '&':\
+    case '(':\
+    case '[':\
+    case ':':\
+    case '.':\
+    case ',':\
+    case '?'
 
 enum
 {
@@ -137,5 +161,10 @@ unsigned long long read_number();
 struct token *token_make_number_for_value(unsigned long number);
 struct token *token_make_number();
 struct token *read_next_token();
+const char *read_op();
+bool lex_is_in_expression();
+
+// token.c
+bool token_is_keyword(struct token *token, const char *keyword);
 
 #endif // PEACHCOMPILER_H
