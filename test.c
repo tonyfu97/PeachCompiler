@@ -1,1 +1,1 @@
-some_id id2
+some_id int long 
