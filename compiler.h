@@ -172,6 +172,7 @@ struct token *token_make_number();
 struct token *read_next_token();
 const char *read_op();
 bool lex_is_in_expression();
+struct token *token_read_special_token();
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);

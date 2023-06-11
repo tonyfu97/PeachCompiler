@@ -1,5 +1,6 @@
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "compiler.h"
 #include "helpers/vector.h"
@@ -269,6 +270,33 @@ static struct token *token_make_symbol()
     return token;
 }
 
+static struct token *token_make_identifier_or_keyword()
+{
+    struct buffer *buffer = buffer_create();
+    char c = peekc();
+    LEX_GETC_IF(buffer, c, (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '1' && c <= '9') || c == '_');
+
+    buffer_write(buffer, '\0');
+
+    // Check if this is a keyword
+
+
+    return token_create(&(struct token){
+        .type = TOKEN_TYPE_KEYWORD,
+        .sval = buffer_ptr(buffer),
+    });
+}
+
+struct token *token_read_special_token()
+{
+    char c = peekc();
+    if (isalpha(c) || c == '_')
+    {
+        return token_make_identifier_or_keyword();
+    }
+    return NULL;
+}
+
 struct token *read_next_token()
 {
     struct token *token = NULL;
@@ -300,7 +328,11 @@ struct token *read_next_token()
     case EOF:
         return NULL;
     default:
-        compiler_error(lex_process->compiler, "Unexpected character '%c'", c);
+        token = token_read_special_token();
+        if (!token)
+        {
+            compiler_error(lex_process->compiler, "Unexpected character '%c'", c);
+        }
     }
 
     return token;
