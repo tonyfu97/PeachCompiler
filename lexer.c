@@ -307,6 +307,14 @@ static struct token *token_make_symbol()
     return token;
 }
 
+static struct token *token_make_newline()
+{
+    nextc();
+    return token_create(&(struct token){
+        .type = TOKEN_TYPE_NEWLINE,
+    });
+}
+
 static struct token *token_make_identifier_or_keyword()
 {
     struct buffer *buffer = buffer_create();
@@ -367,6 +375,10 @@ struct token *read_next_token()
     case ' ':
     case '\t':
         token = handle_white_space();
+        break;
+
+    case '\n':
+        token = token_make_newline();
         break;
 
     case EOF:
