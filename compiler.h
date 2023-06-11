@@ -7,45 +7,45 @@
 
 #include "helpers/vector.h"
 
-#define S_EQ(str, str2)\
-        (str && str2 && (strcmp(str, str2) == 0))
+#define S_EQ(str, str2) \
+    (str && str2 && (strcmp(str, str2) == 0))
 
 struct pos
 {
     int line;
     int col;
-    const char* filename;
+    const char *filename;
 };
 
-#define NUMERIC_CASE\
-    case '0':\
-    case '1':\
-    case '2':\
-    case '3':\
-    case '4':\
-    case '5':\
-    case '6':\
-    case '7':\
-    case '8':\
+#define NUMERIC_CASE \
+    case '0':        \
+    case '1':        \
+    case '2':        \
+    case '3':        \
+    case '4':        \
+    case '5':        \
+    case '6':        \
+    case '7':        \
+    case '8':        \
     case '9'
 
-#define OPERATOR_CASE_EXCLUDE_DIVIDION\
-    case '+':\
-    case '-':\
-    case '*':\
-    case '>':\
-    case '<':\
-    case '^':\
-    case '%':\
-    case '!':\
-    case '=':\
-    case '~':\
-    case '|':\
-    case '&':\
-    case '(':\
-    case '[':\
-    case '.':\
-    case ',':\
+#define OPERATOR_CASE_EXCLUDE_DIVIDION \
+    case '+':                          \
+    case '-':                          \
+    case '*':                          \
+    case '>':                          \
+    case '<':                          \
+    case '^':                          \
+    case '%':                          \
+    case '!':                          \
+    case '=':                          \
+    case '~':                          \
+    case '|':                          \
+    case '&':                          \
+    case '(':                          \
+    case '[':                          \
+    case '.':                          \
+    case ',':                          \
     case '?'
 
 #define SYMBOL_CASE \
@@ -89,9 +89,9 @@ struct token
         unsigned int inum;
         unsigned long lnum;
         unsigned long long llnum;
-        void* any;
+        void *any;
     };
-    
+
     // True if there is a space between this token and the next token.
     bool whitespace;
 
@@ -119,7 +119,7 @@ struct lex_process
     struct compile_process *compiler;
 
     int current_expression_count;
-    struct buffer* parentheses_buffer;
+    struct buffer *parentheses_buffer;
     struct lex_process_functions *function;
 
     // Private data that the lexer does not understand but the user does.
@@ -139,15 +139,15 @@ struct compile_process
     struct pos pos;
     struct compiler_process_input_file
     {
-        FILE* fp;
-        const char* abs_path;
+        FILE *fp;
+        const char *abs_path;
     } cfile;
 
-    FILE* ofile;
+    FILE *ofile;
 };
 
 // cpprocess.c
-struct compile_process* compile_process_create(const char *filename, const char *out_filename, int flags);
+struct compile_process *compile_process_create(const char *filename, const char *out_filename, int flags);
 char compile_process_next_char(struct lex_process *lex_process);
 char compile_process_peek_char(struct lex_process *lex_process);
 void compile_process_push_char(struct lex_process *lex_process, char c);
@@ -157,7 +157,7 @@ void compiler_error(struct compile_process *compiler, const char *message, ...);
 int compile_file(const char *filename, const char *out_filename, int flags);
 
 // lex_process.c
-struct lex_process *lex_process_create(struct compile_process* compiler, struct lex_process_functions *functions, void *private);
+struct lex_process *lex_process_create(struct compile_process *compiler, struct lex_process_functions *functions, void *private);
 void lex_process_free(struct lex_process *process);
 void *lex_process_private(struct lex_process *process);
 struct vector *lex_process_tokens(struct lex_process *process);
@@ -173,6 +173,10 @@ struct token *read_next_token();
 const char *read_op();
 bool lex_is_in_expression();
 struct token *token_read_special_token();
+bool is_keyword(const char *str);
+struct token *token_make_one_line_comment();
+struct token *token_make_multiline_comment();
+struct token *handle_comment();
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);
