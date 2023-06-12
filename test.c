@@ -9,3 +9,5 @@ This is a multiline comment
 0x1234 
 
 0b10101010
+
+(1 + 2)
