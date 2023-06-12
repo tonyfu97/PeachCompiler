@@ -177,6 +177,8 @@ bool is_keyword(const char *str);
 struct token *token_make_one_line_comment();
 struct token *token_make_multiline_comment();
 struct token *handle_comment();
+struct token *token_make_quote();
+char lex_get_escaped_char(char c);
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);

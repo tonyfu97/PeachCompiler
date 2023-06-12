@@ -5,3 +5,5 @@ some_id int long
 /*
 This is a multiline comment
 */
+
+'h'
