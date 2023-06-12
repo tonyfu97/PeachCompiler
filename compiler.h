@@ -156,6 +156,7 @@ struct compile_process
         const char *abs_path;
     } cfile;
 
+    struct vector *tokens;
     FILE *ofile;
 };
 
