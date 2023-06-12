@@ -181,6 +181,8 @@ struct token *token_make_quote();
 char lex_get_escaped_char(char c);
 void lex_pop_token();
 struct token *token_make_special_number_hexadecimal();
+void lex_validate_binary_string(char *str);
+struct token *token_make_special_number_binary();
 struct token *token_make_special_number();
 
 // token.c

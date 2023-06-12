@@ -462,10 +462,42 @@ struct token *token_make_special_number_hexadecimal()
     return token_make_number_for_value(number);
 }
 
+void lex_validate_binary_string(char *str)
+{
+    for (int i = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] != '0' && str[i] != '1')
+        {
+            compiler_error(lex_process->compiler, "Invalid binary string '%s'", str);
+        }
+    }
+}
+
+struct token *token_make_special_number_binary()
+{
+    // Skip the b
+    nextc();
+
+    struct buffer *buffer = buffer_create();
+    char c = peekc();
+    c = tolower(c);
+    LEX_GETC_IF(buffer, c, (c >= '0' && c <= '1'));
+    buffer_write(buffer, '\0');
+    lex_validate_binary_string(buffer_ptr(buffer));
+    unsigned long number = strtol(buffer_ptr(buffer), 0, 2);
+    return token_make_number_for_value(number);
+}
+
 struct token *token_make_special_number()
 {
     struct token* token = NULL;
     struct token *last_token = lexer_last_token();
+
+    // In case this is actually an identifier or keyword that starts with x or b;
+    if (!last_token || !(last_token->type == TOKEN_TYPE_NUMBER && last_token->llnum == 0))
+    {
+        return token_make_identifier_or_keyword();
+    }
 
     lex_pop_token();  // We don't want to make a token for the first 0 in 0x1234
 
@@ -473,6 +505,10 @@ struct token *token_make_special_number()
     if (c == 'x')
     {
         token = token_make_special_number_hexadecimal();
+    }
+    else if (c == 'b')
+    {
+        token = token_make_special_number_binary();
     }
     // TODO: handle other special numbers
 
@@ -532,6 +568,7 @@ struct token *read_next_token()
         break;
 
     case 'x':
+    case 'b':
         token = token_make_special_number();
         break;
 
