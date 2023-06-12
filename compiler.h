@@ -184,6 +184,7 @@ struct token *token_make_special_number_hexadecimal();
 void lex_validate_binary_string(char *str);
 struct token *token_make_special_number_binary();
 struct token *token_make_special_number();
+struct lex_process *token_build_for_string(struct compile_process *compiler, const char *str);
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);

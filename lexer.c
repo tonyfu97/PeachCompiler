@@ -636,3 +636,46 @@ int lex(struct lex_process *process)
 
     return 0;
 }
+
+// Functions to generate tokens from a string
+char lex_string_buffer_next_char(struct lex_process *lex_process)
+{
+    struct buffer *buffer = lex_process->private;
+    return buffer_read(buffer);
+}
+char lex_string_buffer_peek_char(struct lex_process *lex_process)
+{
+    struct buffer *buffer = lex_process->private;
+    return buffer_peek(buffer);
+}
+void lex_string_buffer_push_char(struct lex_process *lex_process, char c)
+{
+    struct buffer *buffer = lex_process->private;
+    buffer_write(buffer, c);
+}
+
+struct lex_process_functions lexer_string_buffer_functions =
+{
+    .next_char = lex_string_buffer_next_char,
+    .peek_char = lex_string_buffer_peek_char,
+    .push_char = lex_string_buffer_push_char,
+};
+
+struct lex_process *token_build_for_string(struct compile_process *compiler, const char *str)
+{
+    struct buffer *buffer = buffer_create();
+    buffer_printf(buffer, str);
+    struct lex_process *lex_process = lex_process_create(compiler, &lexer_string_buffer_functions, buffer);
+
+    if (!lex_process)
+    {
+        return NULL;
+    }
+
+    if (lex(lex_process) != LEX_SUCCESS)
+    {
+        return NULL;
+    }
+
+    return lex_process;
+}
