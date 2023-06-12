@@ -11,3 +11,5 @@ This is a multiline comment
 0b10101010
 
 (1 + 2)
+
+500L

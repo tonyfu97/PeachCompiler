@@ -101,11 +101,33 @@ unsigned long long read_number()
     return atoll(s);
 }
 
+int lexer_number_type(char c)
+{
+    if (c == 'L')
+    {
+        return NUMBER_TYPE_LONG;
+    }
+    else if (c == 'f')
+    {
+        return NUMBER_TYPE_FLOAT;
+    }
+    return NUMBER_TYPE_NORMAL;
+}
+
 struct token *token_make_number_for_value(unsigned long number)
 {
+    int number_type = lexer_number_type(peekc());
+
+    if (number_type != NUMBER_TYPE_NORMAL)
+    {
+        nextc(); // pop off the trailing character
+    }
     return token_create(&(struct token){
         .type = TOKEN_TYPE_NUMBER,
         .llnum = number,
+        .num = {
+            .type = number_type,
+        },
     });
 }
 
