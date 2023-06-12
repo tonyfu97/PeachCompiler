@@ -443,6 +443,47 @@ char lex_get_escaped_char(char c)
     }
 }
 
+void lex_pop_token()
+{
+    vector_pop(lex_process->tokens);
+}
+
+struct token *token_make_special_number_hexadecimal()
+{
+    // Skip the x
+    nextc();
+
+    struct buffer *buffer = buffer_create();
+    char c = peekc();
+    c = tolower(c);
+    LEX_GETC_IF(buffer, c, (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+    buffer_write(buffer, '\0');
+    unsigned long number = strtol(buffer_ptr(buffer), 0, 16);
+    return token_make_number_for_value(number);
+}
+
+struct token *token_make_special_number()
+{
+    struct token* token = NULL;
+    struct token *last_token = lexer_last_token();
+
+    lex_pop_token();  // We don't want to make a token for the first 0 in 0x1234
+
+    char c = peekc();
+    if (c == 'x')
+    {
+        token = token_make_special_number_hexadecimal();
+    }
+    // TODO: handle other special numbers
+
+    if (!token)
+    {
+        compiler_error(lex_process->compiler, "Invalid special number");
+    }
+
+    return token;
+}
+
 struct token *token_make_quote()
 {
     assert_next_c('\'');
@@ -488,6 +529,10 @@ struct token *read_next_token()
 
     SYMBOL_CASE:
         token = token_make_symbol();
+        break;
+
+    case 'x':
+        token = token_make_special_number();
         break;
 
     case '"':

@@ -179,6 +179,9 @@ struct token *token_make_multiline_comment();
 struct token *handle_comment();
 struct token *token_make_quote();
 char lex_get_escaped_char(char c);
+void lex_pop_token();
+struct token *token_make_special_number_hexadecimal();
+struct token *token_make_special_number();
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);
