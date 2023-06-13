@@ -269,6 +269,8 @@ struct lex_process *token_build_for_string(struct compile_process *compiler, con
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);
+bool token_is_symbol(struct token *token, char symbol);
+bool token_is_newline_or_comment(struct token *token);
 
 // parser.c
 int parse_next();
@@ -280,5 +282,6 @@ void node_push(struct node *node);
 struct node *node_peek_or_null();
 struct node *node_peek();
 struct node *node_pop();
+struct node *node_create(struct node *_node);
 
 #endif // PEACHCOMPILER_H
