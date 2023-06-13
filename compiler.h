@@ -204,6 +204,11 @@ enum
     NODE_TYPE_BLANK,
 };
 
+enum
+{
+    NODE_FLAG_INSIDE_EXPRESSION = 1 << 0,
+};
+
 struct node
 {
     int type;
@@ -216,6 +221,17 @@ struct node
         struct node *owner;    // pointer to the body node
         struct node *function; // pointer to the function this node is in
     } binded;
+
+    union
+    {
+        struct op
+        {
+            struct node *left;
+            struct node *right;
+            const char *op;
+        } exp;
+    };
+    
 
     union
     {
@@ -273,6 +289,14 @@ bool token_is_symbol(struct token *token, char symbol);
 bool token_is_newline_or_comment(struct token *token);
 
 // parser.c
+struct history *history_begin(int flags);
+struct history *history_down(struct history *history, int flags);
+void parse_single_token_to_node();
+void parse_expressionable_for_op(struct history *history, const char *op);
+void parse_exp_normal(struct history *history);
+int parse_exp(struct history *history);
+int parse_expressionable_single(struct history *history);
+void parse_expressionable(struct history *history);
 int parse_next();
 int parse(struct compile_process *process);
 
@@ -283,5 +307,9 @@ struct node *node_peek_or_null();
 struct node *node_peek();
 struct node *node_pop();
 struct node *node_create(struct node *_node);
+void make_exp_node(struct node *left_node, struct node *right_node, const char *op);
+bool node_is_expressionable(struct node *node);
+struct node *node_peek_expressionable_or_null();
+
 
 #endif // PEACHCOMPILER_H
