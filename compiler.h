@@ -274,4 +274,11 @@ bool token_is_keyword(struct token *token, const char *keyword);
 int parse_next();
 int parse(struct compile_process *process);
 
+// node.c
+void node_set_vector(struct vector *vec, struct vector *root);
+void node_push(struct node *node);
+struct node *node_peek_or_null();
+struct node *node_peek();
+struct node *node_pop();
+
 #endif // PEACHCOMPILER_H
