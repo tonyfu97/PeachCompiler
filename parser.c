@@ -13,7 +13,7 @@ static void parser_ignore_nl_or_comment(struct token *token)
     }
 }
 
-static struct token *next_token()
+static struct token *token_next()
 {
     struct token *next_token = vector_peek_no_increment(current_process->tokens);
     parser_ignore_nl_or_comment(next_token);
@@ -22,6 +22,7 @@ static struct token *next_token()
     return vector_peek(current_process->tokens); // not just next_token because parser_ignore_nl_or_comment may have incremented the pointer.
 }
 
+// Like token_next(), but doesn't increment the pointer.
 static struct token *token_peek_next()
 {
     struct token *next_token = vector_peek_no_increment(current_process->tokens);
@@ -31,7 +32,7 @@ static struct token *token_peek_next()
 
 void parse_single_token_to_node()
 {
-    struct token *token = next_token();
+    struct token *token = token_next();
     struct node *node = NULL;
     switch (token->type)
     {
