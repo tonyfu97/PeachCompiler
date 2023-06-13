@@ -34,18 +34,21 @@ int compile_file(const char *filename, const char *out_filename, int flags)
     struct lex_process* lex_process = lex_process_create(process, &compiler_lex_process_functions, NULL);
     if (!lex_process)
     {
-        return LEX_FAILED;
+        return COMPILER_FILE_COMPILE_FAILED;
     }
 
     if (lex(lex_process) != LEX_SUCCESS)
     {
-        return LEX_FAILED;
+        return COMPILER_FILE_COMPILE_FAILED;
     }
 
     process->tokens = lex_process->tokens;
 
     // Perform parsing
-
+    if (parse(process) != PARSE_SUCCESS)
+    {
+        return COMPILER_FILE_COMPILE_FAILED;
+    }
 
     // Perform code generation
 

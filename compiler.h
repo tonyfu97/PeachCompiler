@@ -157,7 +157,16 @@ struct compile_process
     } cfile;
 
     struct vector *tokens;
+    struct vector *node_vec;  // tempary vector for nodes used to construct the node tree
+    struct vector *node_tree_vec;  // the actual node tree
+
     FILE *ofile;
+};
+
+enum
+{
+    PARSE_SUCCESS,
+    PARSE_FAILED,
 };
 
 enum
@@ -260,5 +269,9 @@ struct lex_process *token_build_for_string(struct compile_process *compiler, con
 
 // token.c
 bool token_is_keyword(struct token *token, const char *keyword);
+
+// parser.c
+int parse_next();
+int parse(struct compile_process *process);
 
 #endif // PEACHCOMPILER_H
