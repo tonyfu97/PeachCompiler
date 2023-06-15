@@ -224,14 +224,13 @@ struct node
 
     union
     {
-        struct op
+        struct exp
         {
             struct node *left;
             struct node *right;
             const char *op;
         } exp;
     };
-    
 
     union
     {
@@ -310,6 +309,5 @@ struct node *node_create(struct node *_node);
 void make_exp_node(struct node *left_node, struct node *right_node, const char *op);
 bool node_is_expressionable(struct node *node);
 struct node *node_peek_expressionable_or_null();
-
 
 #endif // PEACHCOMPILER_H

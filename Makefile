@@ -1,4 +1,4 @@
-OBJECTS= ./build/compiler.o ./build/cprocess.o ./build/lexer.o ./build/lex_process.o ./build/token.o ./build/parser.o ./build/node.o ./build/buffer.o ./build/vector.o
+OBJECTS= ./build/compiler.o ./build/cprocess.o ./build/lexer.o ./build/lex_process.o ./build/token.o ./build/parser.o ./build/node.o ./build/expressionable.o ./build/buffer.o ./build/vector.o
 INCLUDES= -I./
 FLAGS= -g #-Wall -Werror -std=c11
 
@@ -25,6 +25,9 @@ all: ${OBJECTS}
 
 ./build/node.o: ./node.c
 	gcc -c ./node.c -o ./build/node.o ${INCLUDES} ${FLAGS}
+
+./build/expressionable.o: ./expressionable.c
+	gcc -c ./expressionable.c -o ./build/expressionable.o ${INCLUDES} ${FLAGS}
 
 ./build/buffer.o: ./helpers/buffer.c
 	gcc -c ./helpers/buffer.c -o ./build/buffer.o ${INCLUDES} ${FLAGS}

@@ -71,7 +71,7 @@ void parse_single_token_to_node()
 
 void parse_expressionable_for_op(struct history *history, const char *op)
 {
-
+    parse_expressionable(history);
 }
 
 void parse_exp_normal(struct history *history)
