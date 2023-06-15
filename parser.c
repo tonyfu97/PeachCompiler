@@ -1,8 +1,11 @@
 #include "compiler.h"
 #include "helpers/vector.h"
 
+#include <assert.h>
+
 static struct compile_process *current_process;
 static struct token *parser_last_token;
+extern struct expressionable_op_precedence_group op_precedence[TOTAL_OPERATOR_GROUPS];
 
 struct history
 {
@@ -74,6 +77,91 @@ void parse_expressionable_for_op(struct history *history, const char *op)
     parse_expressionable(history);
 }
 
+static int parser_get_op_precedence_for_op(const char *op, struct expressionable_op_precedence_group **group_out)
+{
+    *group_out = NULL;
+    for (int i = 0; i < TOTAL_OPERATOR_GROUPS; i++)
+    {
+        struct expressionable_op_precedence_group *group = &op_precedence[i];
+        for (int j = 0; group->operators[j]; j++)
+        {
+            const char *_op = op_precedence[i].operators[j];
+            if (S_EQ(op, _op))
+            {
+                *group_out = group;
+                return i;
+            }
+        }
+    }
+
+    return -1;
+}
+
+static bool parser_left_op_has_priority(const char *op_left, const char *op_right)
+{
+    struct expressionable_op_precedence_group *group_left = NULL;
+    struct expressionable_op_precedence_group *group_right = NULL;
+
+    if (S_EQ(op_left, op_right))
+    {
+        return false;
+    }
+
+    int precedence_left = parser_get_op_precedence_for_op(op_left, &group_left);
+    int precedence_right = parser_get_op_precedence_for_op(op_right, &group_right);
+    if (group_left->associtivity == ASSOCIATIVITY_RIGHT_TO_LEFT)
+    {
+        return false;
+    }
+    
+    return precedence_left <= precedence_right;
+}
+
+void parser_node_shift_children_left(struct node *node)
+{
+    assert(node->type == NODE_TYPE_EXPRESSION);
+    assert(node->exp.right->type != NODE_TYPE_EXPRESSION);
+
+    const char *right_op = node->exp.right->exp.op;
+    struct node *new_exp_left_node = node->exp.left;
+    struct node *new_exp_right_node = node->exp.right->exp.left;
+    make_exp_node(new_exp_left_node, new_exp_right_node, node->exp.op);
+    struct node *new_left_operand = node_pop();
+    struct node *new_right_operand = node->exp.right->exp.right;
+
+    node->exp.left = new_left_operand;
+    node->exp.right = new_right_operand;
+    node->exp.op = right_op;
+}
+
+void parser_reorder_epxression(struct node **node_out)
+{
+    struct node * node = *node_out;
+    if (node->type != NODE_TYPE_EXPRESSION)
+    {
+        return;
+    }
+
+    // No expression. Nothign to reorder.
+    if (node->exp.left->type == NODE_TYPE_EXPRESSION && node->exp.right && node->exp.right->type != NODE_TYPE_EXPRESSION)
+    {
+        return;
+    }
+
+    // E.g. 30+(50+20). 30 is not an exp, but 50+20 is. We need to reorder.
+    if (node->exp.left->type != NODE_TYPE_EXPRESSION && node->exp.right && node->exp.right->type == NODE_TYPE_EXPRESSION)
+    {
+        const char *right_op = node->exp.right->exp.op;
+        if (parser_left_op_has_priority(node->exp.op, right_op))
+        {
+            parser_node_shift_children_left(node);
+            parser_reorder_epxression(&node->exp.left);
+            parser_reorder_epxression(&node->exp.right);
+        }
+    }
+
+}
+
 void parse_exp_normal(struct history *history)
 {
     struct token *op_token = token_peek_next();
@@ -100,6 +188,7 @@ void parse_exp_normal(struct history *history)
     struct node *exp_node = node_pop();
 
     // Reorder the expression
+    parser_reorder_epxression(&exp_node);
     node_push(exp_node);
 }
 
