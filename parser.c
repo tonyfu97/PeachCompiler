@@ -52,6 +52,12 @@ static struct token *token_peek_next()
     return vector_peek_no_increment(current_process->tokens); // not just next_token because parser_ignore_nl_or_comment may have incremented the pointer.
 }
 
+static bool token_next_is_op(const char *op)
+{
+    struct token *token = token_peek_next();
+    return token_is_operator(token, op);
+}
+
 void parse_single_token_to_node()
 {
     struct token *token = token_next();
@@ -250,6 +256,94 @@ void parse_datatype_modifiers(struct datatype *dtype)
         token_next();
         token = token_peek_next();
     }
+}
+
+void parser_get_datatype_tokens(struct token **datatype_token, struct token **secondary_datatype_token)
+{
+    *datatype_token = token_next();
+    struct token *next_token = token_peek_next();
+    if (token_is_primitive_keyword(next_token))
+    {
+        *secondary_datatype_token = next_token;
+        token_next();
+    }
+}
+
+int parser_datatype_expected_for_type_string(const char *str)
+{
+    int type = DATATYPE_EXPECT_PRIMITIVE;
+    if (S_EQ(str, "union"))
+    {
+        type = DATATYPE_EXPECT_UNION;
+    }
+    else if (S_EQ(str, "struct"))
+    {
+        type = DATATYPE_EXPECT_STRUCT;
+    }
+    return type;
+}
+
+int parser_get_random_type_index()
+{
+    static int x = 0;
+    x++;
+    return x;
+}
+
+struct token *parse_build_random_type_name()
+{
+    char tmp_name[25];
+    sprintf(tmp_name, "__tmp_type_%i", parser_get_random_type_index());
+    char *sval = malloc(sizeof(tmp_name));
+    strncpy(sval, tmp_name, sizeof(tmp_name));
+    struct token *token = malloc(sizeof(struct token));
+    token->type = TOKEN_TYPE_IDENTIFIER;
+    token->sval = sval;
+    return token;
+}
+
+int parser_get_pointer_depth()
+{
+    int pointer_depth = 0;
+    while (token_next_is_op("*"))
+    {
+        pointer_depth++;
+        token_next();
+    }
+    return pointer_depth;
+}
+
+void parser_datatype_init_type_and_size(struct token *datatype_token, struct token *secondary_datatype_token, struct datatype *datatype_out, int pointer_depth, int expected_type)
+{
+
+}
+
+void parser_datatype_init(struct token *datatype_token, struct token *secondary_datatype_token, struct datatype *datatype_out, int pointer_depth, int expected_type)
+{
+
+}
+
+void parse_datatype_type(struct datatype *dtype)
+{
+    struct token *datatype_token = NULL;
+    struct token *secondary_datatype_token = NULL;
+    parser_get_datatype_tokens(&datatype_token, &secondary_datatype_token);
+    int expected_type = parser_datatype_expected_for_type_string(datatype_token->sval);
+    if (datatype_is_struct_or_union_for_name(datatype_token->sval))
+    {
+        if (token_peek_next()->type == TOKEN_TYPE_IDENTIFIER) // named struct or named union
+        {
+            datatype_token = token_next();
+        }
+        else // anonymous struct or anonymous union
+        {
+            datatype_token = parse_build_random_type_name();
+            dtype->flags |= DATATYPE_FLAG_IS_STRUCT_UNION_NO_NAME;
+        }
+    }
+
+    int pointer_depth = parser_get_pointer_depth();
+    
 }
 
 void parse_datatype(struct datatype *dtype)

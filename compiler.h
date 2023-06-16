@@ -287,6 +287,13 @@ struct datatype
     };
 };
 
+enum
+{
+    DATATYPE_EXPECT_PRIMITIVE,
+    DATATYPE_EXPECT_UNION,
+    DATATYPE_EXPECT_STRUCT,
+};
+
 // cpprocess.c
 struct compile_process *compile_process_create(const char *filename, const char *out_filename, int flags);
 char compile_process_next_char(struct lex_process *lex_process);
@@ -332,6 +339,8 @@ struct lex_process *token_build_for_string(struct compile_process *compiler, con
 bool token_is_keyword(struct token *token, const char *keyword);
 bool token_is_symbol(struct token *token, char symbol);
 bool token_is_newline_or_comment(struct token *token);
+bool token_is_operator(struct token *token, const char *op);
+bool token_is_primitive_keyword(struct token *token);
 
 // parser.c
 struct history *history_begin(int flags);
@@ -369,5 +378,8 @@ struct expressionable_op_precedence_group
     char *operators[MAX_OPERATOR_IN_GROUP];
     int associtivity;
 };
+
+// datatype.c
+bool datatype_is_struct_or_union_for_name(const char *name);
 
 #endif // PEACHCOMPILER_H
