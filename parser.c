@@ -134,7 +134,7 @@ void parser_node_shift_children_left(struct node *node)
     node->exp.op = right_op;
 }
 
-void parser_reorder_epxression(struct node **node_out)
+void parser_reorder_expression(struct node **node_out)
 {
     struct node * node = *node_out;
     if (node->type != NODE_TYPE_EXPRESSION)
@@ -155,8 +155,8 @@ void parser_reorder_epxression(struct node **node_out)
         if (parser_left_op_has_priority(node->exp.op, right_op))
         {
             parser_node_shift_children_left(node);
-            parser_reorder_epxression(&node->exp.left);
-            parser_reorder_epxression(&node->exp.right);
+            parser_reorder_expression(&node->exp.left);
+            parser_reorder_expression(&node->exp.right);
         }
     }
 
@@ -188,7 +188,7 @@ void parse_exp_normal(struct history *history)
     struct node *exp_node = node_pop();
 
     // Reorder the expression
-    parser_reorder_epxression(&exp_node);
+    parser_reorder_expression(&exp_node);
     node_push(exp_node);
 }
 
@@ -196,6 +196,12 @@ int parse_exp(struct history *history)
 {
     parse_exp_normal(history);
     return 0;
+}
+
+void parse_identifier(struct history *history)
+{
+    assert(token_peek_next()->type == TOKEN_TYPE_IDENTIFIER);
+    parse_single_token_to_node();
 }
 
 int parse_expressionable_single(struct history *history)
@@ -212,6 +218,10 @@ int parse_expressionable_single(struct history *history)
     {
     case TOKEN_TYPE_NUMBER:
         parse_single_token_to_node();
+        res = 0;
+        break;
+    case TOKEN_TYPE_IDENTIFIER:
+        parse_identifier(history);
         res = 0;
         break;
     case TOKEN_TYPE_OPERATOR:
