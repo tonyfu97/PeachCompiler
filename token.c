@@ -27,7 +27,7 @@ bool token_is_operator(struct token *token, const char *op)
 
 bool token_is_primitive_keyword(struct token *token)
 {
-    if (!token->type != TOKEN_TYPE_KEYWORD)
+    if (token->type != TOKEN_TYPE_KEYWORD)
     {
         return false;
     }

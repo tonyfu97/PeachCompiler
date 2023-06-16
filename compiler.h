@@ -294,6 +294,15 @@ enum
     DATATYPE_EXPECT_STRUCT,
 };
 
+enum
+{
+    DATA_SIZE_ZERO = 0,
+    DATA_SIZE_BYTE = 1,
+    DATA_SIZE_WORD = 2,
+    DATA_SIZE_DWORD = 4,
+    DATA_SIZE_DDWORD = 8,
+};
+
 // cpprocess.c
 struct compile_process *compile_process_create(const char *filename, const char *out_filename, int flags);
 char compile_process_next_char(struct lex_process *lex_process);
@@ -302,6 +311,7 @@ void compile_process_push_char(struct lex_process *lex_process, char c);
 
 // compiler.c
 void compiler_error(struct compile_process *compiler, const char *message, ...);
+void compiler_warning(struct compile_process *compiler, const char *message, ...);
 int compile_file(const char *filename, const char *out_filename, int flags);
 
 // lex_process.c
@@ -353,6 +363,7 @@ int parse_expressionable_single(struct history *history);
 void parse_expressionable(struct history *history);
 int parse_next();
 int parse(struct compile_process *process);
+void parser_datatype_adjust_size_for_secondary(struct datatype *datatype, struct token *secondary_datatype_token);
 
 // node.c
 void node_set_vector(struct vector *vec, struct vector *root);

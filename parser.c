@@ -222,13 +222,13 @@ static bool is_keyword_variation_modifier(const char *val)
 void parse_datatype_modifiers(struct datatype *dtype)
 {
     struct token *token = token_peek_next();
-    while(token && is_keyword_variation_modifier(token->sval))
+    while (token && is_keyword_variation_modifier(token->sval))
     {
         if (!is_keyword_variation_modifier(token->sval))
         {
             break;
         }
-        
+
         if (S_EQ(token->sval, "const"))
         {
             dtype->flags |= DATATYPE_FLAG_IS_CONST;
@@ -313,13 +313,114 @@ int parser_get_pointer_depth()
     return pointer_depth;
 }
 
+bool parser_datatype_is_secondary_allowed(int expected_type)
+{
+    return expected_type == DATATYPE_EXPECT_PRIMITIVE;
+}
+
+bool parser_datatype_is_secondary_allowed_for_type(const char *type)
+{
+    return S_EQ(type, "float") ||
+           S_EQ(type, "double") ||
+           S_EQ(type, "short") ||
+           S_EQ(type, "long");
+}
+
+void parser_datatype_init_and_size_for_primitive(struct token *datatype_token, struct token *secondary_datatype_token, struct datatype *datatype_out)
+{
+    if (!parser_datatype_is_secondary_allowed_for_type(datatype_token->sval) && secondary_datatype_token)
+    {
+        compiler_error(current_process, "Unexpected secondary datatype %s\n", secondary_datatype_token->sval);
+    }
+
+    if (S_EQ(datatype_token->sval, "void"))
+    {
+        datatype_out->size = DATA_SIZE_ZERO;
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "char"))
+    {
+        datatype_out->size = DATA_SIZE_BYTE;
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "short"))
+    {
+        datatype_out->size = DATA_SIZE_WORD;
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "int"))
+    {
+        datatype_out->size = DATA_SIZE_DWORD;
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "long"))
+    {
+        datatype_out->size = DATA_SIZE_DWORD; // TODO: actually DDWORD, but we will adjust later
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "float"))
+    {
+        datatype_out->size = DATA_SIZE_DWORD;
+        return;
+    }
+    else if (S_EQ(datatype_token->sval, "double"))
+    {
+        datatype_out->size = DATA_SIZE_DWORD; // TODO: actually DDWORD, but we will adjust later
+        return;
+    }
+    else
+    {
+        compiler_error(current_process, "Unexpected primitive datatype %s\n", datatype_token->sval);
+    }
+
+    parser_datatype_adjust_size_for_secondary(datatype_out, secondary_datatype_token);
+}
+
+void parser_datatype_adjust_size_for_secondary(struct datatype *datatype, struct token *secondary_datatype_token)
+{
+    if (!secondary_datatype_token)
+    {
+        return;
+    }
+
+    struct datatype *secondary_datatype = malloc(sizeof(struct datatype));
+    parser_datatype_init_and_size_for_primitive(secondary_datatype_token, NULL, secondary_datatype);
+    datatype->size += secondary_datatype->size;
+    datatype->datatype_secondary = secondary_datatype;
+    datatype->flags |= DATATYPE_FLAG_IS_SECONDARY;
+}
+
 void parser_datatype_init_type_and_size(struct token *datatype_token, struct token *secondary_datatype_token, struct datatype *datatype_out, int pointer_depth, int expected_type)
 {
+    if (!parser_datatype_is_secondary_allowed(expected_type) && secondary_datatype_token)
+    {
+        compiler_error(current_process, "Unexpected secondary datatype %s\n", secondary_datatype_token->sval);
+    }
 
+    switch (expected_type)
+    {
+    case DATATYPE_EXPECT_PRIMITIVE:
+        parser_datatype_init_and_size_for_primitive(datatype_token, secondary_datatype_token, datatype_out);
+        break;
+    case DATATYPE_EXPECT_STRUCT:
+    case DATATYPE_EXPECT_UNION:
+        compiler_error(current_process, "Currently not support struct or union datatype %s\n", datatype_token->sval);
+        break;
+    default:
+        compiler_error(current_process, "Unexpected datatype %s\n", datatype_token->sval);
+    }
 }
 
 void parser_datatype_init(struct token *datatype_token, struct token *secondary_datatype_token, struct datatype *datatype_out, int pointer_depth, int expected_type)
 {
+    parser_datatype_init_type_and_size(datatype_token, secondary_datatype_token, datatype_out, pointer_depth, expected_type);
+    datatype_out->type_str = datatype_token->sval;
+
+    if (S_EQ(datatype_token->sval, "long") && secondary_datatype_token && S_EQ(secondary_datatype_token->sval, "long"))
+    {
+        compiler_warning(current_process, "long long is current not supported. The compiler now uses long instead.\n");
+        datatype_out->size = DATA_SIZE_DWORD;
+    }
 
 }
 
@@ -343,7 +444,7 @@ void parse_datatype_type(struct datatype *dtype)
     }
 
     int pointer_depth = parser_get_pointer_depth();
-    
+    parser_datatype_init(datatype_token, secondary_datatype_token, dtype, pointer_depth, expected_type);
 }
 
 void parse_datatype(struct datatype *dtype)
