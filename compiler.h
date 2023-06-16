@@ -242,6 +242,51 @@ struct node
     };
 };
 
+enum
+{
+    DATATYPE_FLAG_IS_SIGNED = 1 << 0,
+    DATATYPE_FLAG_IS_STATIC = 1 << 1,
+    DATATYPE_FLAG_IS_CONST = 1 << 2,
+    DATATYPE_FLAG_IS_POINTER = 1 << 3,
+    DATATYPE_FLAG_IS_ARRAY = 1 << 4,
+    DATATYPE_FLAG_IS_EXTERN = 1 << 5,
+    DATATYPE_FLAG_IS_RESTRICT = 1 << 6,
+    DATATYPE_FLAG_IS_IGNORE_TYPECHECK = 1 << 7,
+    DATATYPE_FLAG_IS_SECONDARY = 1 << 8,
+    DATATYPE_FLAG_IS_STRUCT_UNION_NO_NAME = 1 << 9,
+    DATATYPE_FLAG_IS_LITERAL = 1 << 10,
+};
+
+enum
+{
+    DATATYPE_VOID,
+    DATATYPE_CHAR,
+    DATATYPE_SHORT,
+    DATATYPE_INT,
+    DATATYPE_LONG,
+    DATATYPE_FLOAT,
+    DATATYPE_DOUBLE,
+    DATATYPE_STRUCT,
+    DATATYPE_UNION,
+    DATATYPE_UNKNOWN,
+};
+
+struct datatype
+{
+    int flags;
+    int type;
+    struct datatype* datatype_secondary;  // e.g., long int. int is the secondary datatype
+    const char *type_str;
+    size_t size;  // number of bytes
+    int pointer_depth; // e.g., **ptr = depth of 2
+
+    union 
+    {
+        struct node *struct_node;
+        struct node *union_node;
+    };
+};
+
 // cpprocess.c
 struct compile_process *compile_process_create(const char *filename, const char *out_filename, int flags);
 char compile_process_next_char(struct lex_process *lex_process);
@@ -268,6 +313,7 @@ struct token *token_make_number();
 struct token *read_next_token();
 const char *read_op();
 bool lex_is_in_expression();
+bool keyword_is_datatype(const char *str);
 struct token *token_read_special_token();
 bool is_keyword(const char *str);
 struct token *token_make_one_line_comment();

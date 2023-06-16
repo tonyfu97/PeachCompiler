@@ -113,7 +113,7 @@ static bool parser_left_op_has_priority(const char *op_left, const char *op_righ
     {
         return false;
     }
-    
+
     return precedence_left <= precedence_right;
 }
 
@@ -136,7 +136,7 @@ void parser_node_shift_children_left(struct node *node)
 
 void parser_reorder_expression(struct node **node_out)
 {
-    struct node * node = *node_out;
+    struct node *node = *node_out;
     if (node->type != NODE_TYPE_EXPRESSION)
     {
         return;
@@ -159,7 +159,6 @@ void parser_reorder_expression(struct node **node_out)
             parser_reorder_expression(&node->exp.right);
         }
     }
-
 }
 
 void parse_exp_normal(struct history *history)
@@ -172,7 +171,7 @@ void parse_exp_normal(struct history *history)
     {
         return;
     }
-    
+
     // Pop off operator token
     token_next();
 
@@ -204,6 +203,80 @@ void parse_identifier(struct history *history)
     parse_single_token_to_node();
 }
 
+static bool is_keyword_variation_modifier(const char *val)
+{
+    return S_EQ(val, "const") ||
+           S_EQ(val, "static") ||
+           S_EQ(val, "__ignore_typecheck__") ||
+           S_EQ(val, "extern") ||
+           S_EQ(val, "unsigned") ||
+           S_EQ(val, "signed");
+}
+
+void parse_datatype_modifiers(struct datatype *dtype)
+{
+    struct token *token = token_peek_next();
+    while(token && is_keyword_variation_modifier(token->sval))
+    {
+        if (!is_keyword_variation_modifier(token->sval))
+        {
+            break;
+        }
+        
+        if (S_EQ(token->sval, "const"))
+        {
+            dtype->flags |= DATATYPE_FLAG_IS_CONST;
+        }
+        else if (S_EQ(token->sval, "static"))
+        {
+            dtype->flags |= DATATYPE_FLAG_IS_STATIC;
+        }
+        else if (S_EQ(token->sval, "__ignore_typecheck__"))
+        {
+            dtype->flags |= DATATYPE_FLAG_IS_IGNORE_TYPECHECK;
+        }
+        else if (S_EQ(token->sval, "extern"))
+        {
+            dtype->flags |= DATATYPE_FLAG_IS_EXTERN;
+        }
+        else if (S_EQ(token->sval, "unsigned"))
+        {
+            dtype->flags &= ~DATATYPE_FLAG_IS_SIGNED;
+        }
+        else if (S_EQ(token->sval, "signed"))
+        {
+            dtype->flags |= DATATYPE_FLAG_IS_SIGNED;
+        }
+        token_next();
+        token = token_peek_next();
+    }
+}
+
+void parse_datatype(struct datatype *dtype)
+{
+    memset(dtype, 0, sizeof(struct datatype));
+    dtype->flags |= DATATYPE_FLAG_IS_SIGNED;
+
+    parse_datatype_modifiers(dtype);
+    parse_datatype_type(dtype);
+    parse_datatype_modifiers(dtype);
+}
+
+void parse_variable_function_or_struct_union(struct history *history)
+{
+    struct datatype dtype;
+    parse_datatype(&dtype);
+}
+
+void parse_keyword(struct history *history)
+{
+    struct token *token = token_peek_next();
+    if (is_keyword_variation_modifier(token->sval) || keyword_is_datatype(token->sval))
+    {
+        parse_variable_function_or_struct_union(history);
+    }
+}
+
 int parse_expressionable_single(struct history *history)
 {
     struct token *token = token_peek_next();
@@ -226,6 +299,10 @@ int parse_expressionable_single(struct history *history)
         break;
     case TOKEN_TYPE_OPERATOR:
         parse_exp(history);
+        res = 0;
+        break;
+    case TOKEN_TYPE_KEYWORD:
+        parse_keyword(history);
         res = 0;
         break;
     }
