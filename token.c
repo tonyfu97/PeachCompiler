@@ -5,12 +5,12 @@ const char *primitive_types[PRIMITIVE_TYPE_TOTAL] = {"int", "float", "double", "
 
 bool token_is_keyword(struct token *token, const char *keyword)
 {
-    return token->type == TOKEN_TYPE_KEYWORD && S_EQ(token->sval, keyword);
+    return token && token->type == TOKEN_TYPE_KEYWORD && S_EQ(token->sval, keyword);
 }
 
 bool token_is_symbol(struct token *token, char symbol)
 {
-    return token->type == TOKEN_TYPE_SYMBOL && token->cval == symbol;
+    return token && token->type == TOKEN_TYPE_SYMBOL && token->cval == symbol;
 }
 
 bool token_is_newline_or_comment(struct token *token)
@@ -22,11 +22,16 @@ bool token_is_newline_or_comment(struct token *token)
 
 bool token_is_operator(struct token *token, const char *op)
 {
-    return token->type == TOKEN_TYPE_OPERATOR && S_EQ(token->sval, op);
+    return token && token->type == TOKEN_TYPE_OPERATOR && S_EQ(token->sval, op);
 }
 
 bool token_is_primitive_keyword(struct token *token)
 {
+    if (!token)
+    {
+        return false;
+    }
+
     if (token->type != TOKEN_TYPE_KEYWORD)
     {
         return false;

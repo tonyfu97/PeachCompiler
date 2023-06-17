@@ -335,36 +335,43 @@ void parser_datatype_init_and_size_for_primitive(struct token *datatype_token, s
 
     if (S_EQ(datatype_token->sval, "void"))
     {
+        datatype_out->type = DATATYPE_VOID;
         datatype_out->size = DATA_SIZE_ZERO;
         return;
     }
     else if (S_EQ(datatype_token->sval, "char"))
     {
+        datatype_out->type = DATATYPE_CHAR;
         datatype_out->size = DATA_SIZE_BYTE;
         return;
     }
     else if (S_EQ(datatype_token->sval, "short"))
     {
+        datatype_out->type = DATATYPE_SHORT;
         datatype_out->size = DATA_SIZE_WORD;
         return;
     }
     else if (S_EQ(datatype_token->sval, "int"))
     {
+        datatype_out->type = DATATYPE_INT;
         datatype_out->size = DATA_SIZE_DWORD;
         return;
     }
     else if (S_EQ(datatype_token->sval, "long"))
     {
+        datatype_out->type = DATATYPE_LONG;
         datatype_out->size = DATA_SIZE_DWORD; // TODO: actually DDWORD, but we will adjust later
         return;
     }
     else if (S_EQ(datatype_token->sval, "float"))
     {
+        datatype_out->type = DATATYPE_FLOAT;
         datatype_out->size = DATA_SIZE_DWORD;
         return;
     }
     else if (S_EQ(datatype_token->sval, "double"))
     {
+        datatype_out->type = DATATYPE_DOUBLE;
         datatype_out->size = DATA_SIZE_DWORD; // TODO: actually DDWORD, but we will adjust later
         return;
     }
@@ -512,6 +519,12 @@ void parse_expressionable(struct history *history)
     }
 }
 
+void parse_keyword_for_global()
+{
+    parse_keyword(history_begin(0));
+    //struct node *node = node_pop();
+}
+
 int parse_next()
 {
     struct token *token = token_peek_next();
@@ -526,6 +539,10 @@ int parse_next()
     case TOKEN_TYPE_IDENTIFIER:
     case TOKEN_TYPE_STRING:
         parse_expressionable_single(history_begin(0));
+        break;
+    
+    case TOKEN_TYPE_KEYWORD:
+        parse_keyword_for_global();
         break;
     }
     return 0;
