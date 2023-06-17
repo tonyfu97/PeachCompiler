@@ -145,6 +145,16 @@ enum
     COMPILER_FILE_COMPILE_FAILED = 1,
 };
 
+struct scope
+{
+    int flags;
+
+    struct vector *entities;  // Void pointers to variables, functions, etc.
+    size_t size; // Total number to bytes. Aligned to 16 bytes.
+
+    struct scope *parent;  // NULL if no parent.
+};
+
 struct compile_process
 {
     int flags;
@@ -161,6 +171,12 @@ struct compile_process
     struct vector *node_tree_vec;  // the actual node tree
 
     FILE *ofile;
+
+    struct 
+    {
+        struct scope *root;
+        struct scope *current;
+    } scope;
 };
 
 enum
@@ -392,5 +408,22 @@ struct expressionable_op_precedence_group
 
 // datatype.c
 bool datatype_is_struct_or_union_for_name(const char *name);
+
+// scope.c
+struct scope *scope_alloc();
+void scope_dealloc(struct scope *scope);
+struct scope *scope_create_root(struct compile_process *process);
+void scope_free_root(struct compile_process *process);
+struct scope *scope_new(struct compile_process *process, int flags);
+void scope_iteration_start(struct scope *scope);
+void scope_iteration_end(struct scope *scope);
+void *scope_iterate_back(struct scope *scope);
+void *scope_last_entity_at_scope(struct scope *scope);
+void *scope_last_entity_from_scope_stop_at(struct scope *scope, struct scope *stop_scope);
+void *scope_last_entity_stop_at(struct compile_process *process, struct scope *stop_scope);
+void scope_push(struct compile_process *process, void *entity, size_t entity_size);
+void scope_finish(struct compile_process *process);
+struct scope *scope_current(struct compile_process *process);
+struct scope *scope_root(struct compile_process *process);
 
 #endif // PEACHCOMPILER_H
