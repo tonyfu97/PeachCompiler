@@ -155,6 +155,20 @@ struct scope
     struct scope *parent;  // NULL if no parent.
 };
 
+enum
+{
+    SYMBOL_TYPE_NODE,
+    SYMBOL_TYPE_NATIVE_FUNCTION,
+    SYMBOL_TYPE_UNKNOWN,
+};
+
+struct symbol
+{
+    const char *name;
+    int type;
+    void *data;
+};
+
 struct compile_process
 {
     int flags;
@@ -177,6 +191,12 @@ struct compile_process
         struct scope *root;
         struct scope *current;
     } scope;
+
+    struct
+    {
+        struct vector *table;  // current active symbol table
+        struct vector *tables;
+    } symbols;
 };
 
 enum
