@@ -468,6 +468,30 @@ void parse_variable_function_or_struct_union(struct history *history)
 {
     struct datatype dtype;
     parse_datatype(&dtype);
+
+    parser_ignore_int(&dtype);
+}
+
+bool parser_is_int_valid_after_datatype(struct datatype *dtype)
+{
+    return dtype->type == DATATYPE_SHORT || dtype->type == DATATYPE_LONG;
+}
+
+void parser_ignore_int(struct datatype *dtype)
+{
+    // Because 'long int' is the same is 'long', we can ignore the 'int' part
+    if (!token_is_keyword(token_peek_next(), "int"))
+    {
+        return;
+    }
+
+    // If the datatype is not short or long, then we should not have 'int' after it
+    if (!parser_is_int_valid_after_datatype(dtype))
+    {
+        compiler_error(current_process, "Unexpected 'int' after datatype %s\n", dtype->type_str);
+    }
+
+    token_next();
 }
 
 void parse_keyword(struct history *history)

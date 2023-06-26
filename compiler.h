@@ -400,6 +400,7 @@ void parse_expressionable(struct history *history);
 int parse_next();
 int parse(struct compile_process *process);
 void parser_datatype_adjust_size_for_secondary(struct datatype *datatype, struct token *secondary_datatype_token);
+void parser_ignore_int(struct datatype *dtype);
 
 // node.c
 void node_set_vector(struct vector *vec, struct vector *root);
